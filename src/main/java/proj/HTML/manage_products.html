@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Goods</title>
+  <style>
+    /* CSS styles for formatting */
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: bold;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="number"] {
+      width: 100%;
+      padding: 5px;
+    }
+
+    .form-group button {
+      padding: 5px 10px;
+      background-color: #333;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    .response-message {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #eee;
+      color: #333;
+    }
+
+    /* Styles for forms */
+    .form-container {
+      margin-bottom: 30px;
+    }
+
+    .form-container h1 {
+      margin-bottom: 20px;
+    }
+
+    .form-container .form-group {
+      display: flex;
+      align-items: center;
+    }
+
+    .form-container .form-group label {
+      flex-basis: 100px;
+      margin-right: 10px;
+    }
+
+    .form-container .form-group input[type="text"],
+    .form-container .form-group input[type="number"] {
+      flex-grow: 1;
+    }
+
+    .form-container .form-group button {
+      margin-left: auto;
+    }
+
+    /* Styles for sidebar */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 200px;
+      height: 100%;
+      background-color: #333;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .sidebar ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    .sidebar ul li {
+      margin-bottom: 10px;
+    }
+
+    .sidebar ul li a {
+      text-decoration: none;
+      color: #fff;
+      display: block;
+      padding: 10px;
+      background-color: #444;
+      border-radius: 5px;
+    }
+
+    .sidebar ul li a:hover {
+      background-color: #555;
+    }
+
+    .sidebar ul li a:hover,
+    .sidebar ul li a:focus {
+      outline: none;
+      background-color: #555;
+    }
+  </style>
+  <script>
+    // JavaScript code for server interaction
+    window.onload = function() {
+      // Check authorization
+      if (!localStorage.getItem("token")) {
+        window.location.href = "/";
+      }
+    };
+    function createProduct() {
+      var nameInput = document.getElementById("name").value;
+      var priceInput = document.getElementById("price").value;
+      var quantityInput = document.getElementById("quantity").value;
+      var categoryInput = document.getElementById("category").value;
+      var characteristicInput = document.getElementById("characteristic").value;
+      var manufacturerInput = document.getElementById("manufacturer").value;
+
+      var data = {
+        name: nameInput,
+        price: priceInput,
+        quantity: quantityInput,
+        category: categoryInput,
+        characteristic: characteristicInput,
+        manufacturer: manufacturerInput
+      };
+
+      var xhr = new XMLHttpRequest();
+      xhr.open("PUT", "/api/good", true);
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.setRequestHeader("Authorization", "Bearer " + localStorage.getItem("token"));
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 201) {
+            showResponseMessage("Product added", "responseMessage");
+          } else {
+            showResponseMessage("Failed to create product", "responseMessage");
+          }
+        }
+      };
+      xhr.send(JSON.stringify(data));
+    }
+
+    function getProduct() {
+      var productIdInput = document.getElementById("productId").value;
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", "/api/good/" + productIdInput, true);
+      xhr.setRequestHeader("Authorization", "Bearer " + localStorage.getItem("token"));
+
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            var response = JSON.parse(xhr.responseText);
+            var productDetails = "Name: " + response.name + "<br>Price: " + response.price + "<br>Quantity: " + response.quantity + "<br>Category: " + response.category + "<br>Characteristic: " + response.characteristic + "<br>Manufacturer: " + response.manufacturer;
+            showResponseMessage(productDetails, "productDetails");
+          } else {
+            showResponseMessage("Failed to get product details", "productDetails");
+          }
+        }
+      };
+      xhr.send();
+    }
+
+    function updateProduct() {
+      var updateProductIdInput = document.getElementById("updateProductId").value;
+      var updateNameInput = document.getElementById("updateName").value;
+      var updatePriceInput = document.getElementById("updatePrice").value;
+      var updateQuantityInput = document.getElementById("updateQuantity").value;
+      var updateCategoryInput = document.getElementById("updateCategory").value;
+      var updateCharacteristicInput = document.getElementById("updateCharacteristic").value;
+      var updateManufacturerInput = document.getElementById("updateManufacturer").value;
+
+      var data = {
+        id: updateProductIdInput,
+        name: updateNameInput,
+        price: updatePriceInput,
+        quantity: updateQuantityInput,
+        category: updateCategoryInput,
+        characteristic: updateCharacteristicInput,
+        manufacturer: updateManufacturerInput
+      };
+
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", "/api/good/" + updateProductIdInput, true);
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.setRequestHeader("Authorization", "Bearer " + localStorage.getItem("token"));
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 204) {
+            showResponseMessage("Product updated", "updateResponseMessage");
+          } else {
+            showResponseMessage("Failed to update product", "updateResponseMessage");
+          }
+        }
+      };
+      xhr.send(JSON.stringify(data));
+    }
+
+    function deleteProduct() {
+      var deleteProductIdInput = document.getElementById("deleteProductId").value;
+
+      var xhr = new XMLHttpRequest();
+      xhr.open("DELETE", "/api/good/" + deleteProductIdInput, true);
+      xhr.setRequestHeader("Authorization", "Bearer " + localStorage.getItem("token"));
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 204) {
+            showResponseMessage("Product deleted", "deleteResponseMessage");
+          } else {
+            showResponseMessage("Failed to delete product", "deleteResponseMessage");
+          }
+        }
+      };
+      xhr.send();
+    }
+
+    function takeItem() {
+      var takeItemIdInput = document.getElementById("takeItemId").value;
+      var takeItemQuantityInput = document.getElementById("takeItemQuantity").value;
+
+      var data = {
+        id: takeItemIdInput,
+        quantity: takeItemQuantityInput
+      };
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("DELETE", "/api/good/" + takeItemIdInput+"_"+takeItemQuantityInput, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("Authorization", "Bearer " + localStorage.getItem("token"));
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 204) {
+              showResponseMessage("Item taken", "takeResponseMessage");
+            } else {
+              showResponseMessage("Failed to take item", "takeResponseMessage");
+            }
+          }
+        };
+        xhr.send();
+    }
+
+
+    function showResponseMessage(message, elementId) {
+      var responseMessage = document.getElementById(elementId);
+      responseMessage.innerHTML = message;
+    }
+  </script>
+</head>
+<body>
+<div class="container">
+  <div class="sidebar">
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/categories">Manage Categories</a></li>
+    </ul>
+  </div>
+</div>
+<div class="container">
+  <h1>Add Product to storage</h1>
+  <div class="form-group">
+    <label for="name">Name:</label>
+    <input type="text" id="name" required>
+  </div>
+  <div class="form-group">
+    <label for="price">Price:</label>
+    <input type="number" id="price" required>
+  </div>
+  <div class="form-group">
+    <label for="quantity">Quantity:</label>
+    <input type="number" id="quantity" required>
+  </div>
+  <div class="form-group">
+    <label for="category">Category:</label>
+    <input type="text" id="category" required>
+  </div>
+  <div class="form-group">
+    <label for="characteristic">Characteristic:</label>
+    <input type="text" id="characteristic" required>
+  </div>
+  <div class="form-group">
+    <label for="manufacturer">Manufacturer:</label>
+    <input type="text" id="manufacturer" required>
+  </div>
+  <div class="form-group">
+    <button onclick="createProduct()">Add</button>
+  </div>
+  <div class="response-message" id="responseMessage"></div>
+</div>
+
+<div class="container">
+  <h1>Take Some Item</h1>
+  <div class="form-group">
+    <label for="takeItemId">Item ID:</label>
+    <input type="text" id="takeItemId" required>
+  </div>
+  <div class="form-group">
+    <label for="takeItemQuantity">Quantity:</label>
+    <input type="number" id="takeItemQuantity" required>
+  </div>
+  <div class="form-group">
+    <button onclick="takeItem()">Take</button>
+  </div>
+  <div class="response-message" id="takeResponseMessage"></div>
+</div>
+
+<div class="container">
+  <h1>Product Details</h1>
+  <div class="form-group">
+    <label for="productId">Product ID:</label>
+    <input type="number" id="productId" required>
+  </div>
+  <div class="form-group">
+    <button onclick="getProduct()">Get Details</button>
+  </div>
+  <div class="response-message" id="productDetails"></div>
+</div>
+
+<div class="container">
+  <h1>Update Product</h1>
+  <div class="form-group">
+    <label for="updateProductId">Product ID:</label>
+    <input type="number" id="updateProductId" required>
+  </div>
+  <div class="form-group">
+    <label for="updateName">Name:</label>
+    <input type="text" id="updateName" required>
+  </div>
+  <div class="form-group">
+    <label for="updatePrice">Price:</label>
+    <input type="number" id="updatePrice" required>
+  </div>
+  <div class="form-group">
+    <label for="updateQuantity">Quantity:</label>
+    <input type="number" id="updateQuantity" required>
+  </div>
+  <div class="form-group">
+    <label for="updateCategory">Category:</label>
+    <input type="text" id="updateCategory" required>
+  </div>
+  <div class="form-group">
+    <label for="updateCharacteristic">Characteristic:</label>
+    <input type="text" id="updateCharacteristic" required>
+  </div>
+  <div class="form-group">
+    <label for="updateManufacturer">Manufacturer:</label>
+    <input type="text" id="updateManufacturer" required>
+  </div>
+  <div class="form-group">
+    <button onclick="updateProduct()">Update</button>
+  </div>
+  <div class="response-message" id="updateResponseMessage"></div>
+</div>
+
+<div class="container">
+  <h1>Delete Product</h1>
+  <div class="form-group">
+    <label for="deleteProductId">Product ID:</label>
+    <input type="number" id="deleteProductId" required>
+  </div>
+  <div class="form-group">
+    <button onclick="deleteProduct()">Delete</button>
+  </div>
+  <div class="response-message" id="deleteResponseMessage"></div>
+</div>
+
+</body>
+</html>
