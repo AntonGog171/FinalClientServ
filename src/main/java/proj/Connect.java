@@ -7,28 +7,29 @@ import java.sql.Statement;
 
 public class Connect {
     Connection con;
-    String name;
+    String p_name;
+    String c_name;
     public Connection getCon() {
         return con;
     }
-    public String getName(){
-        return name;
+    public String getP_name(){
+        return p_name;
     }
-    public Connect(String name){
+    public Connect(String p_name, String c_name){
         try{
-            this.name=name;
+            this.p_name =p_name;
             Class.forName("org.sqlite.JDBC");
-            con = DriverManager.getConnection("jdbc:sqlite:" + name);
-            createTableIfNotExists(name);
+            con = DriverManager.getConnection("jdbc:sqlite:" + p_name);
+            createTableIfNotExists(p_name, c_name);
         }catch(ClassNotFoundException | SQLException e){
             System.out.println("Could not find JDBC driver");
             e.printStackTrace();
         }
     }
 
-    private void createTableIfNotExists(String TABLE_NAME) {
+    private void createTableIfNotExists(String p_name, String c_name) {
         try (Statement stmt = con.createStatement()) {
-            String sql = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " (" +
+            String sql = "CREATE TABLE IF NOT EXISTS " + p_name + " (" +
                     "id INTEGER PRIMARY KEY," +
                     "name TEXT NOT NULL," +
                     "price REAL NOT NULL," +
@@ -38,8 +39,12 @@ public class Connect {
                     "manufacturer TEXT NOT NULL" +
                     ")";
             stmt.executeUpdate(sql);
+            sql="CREATE TABLE IF NOT EXISTS "+ c_name +" ("+
+                    "name TEXT PRIMARY KEY," +
+                    "description TEXT NOT NULL"+")";
+            stmt.executeUpdate(sql);
         } catch (SQLException e) {
-            System.out.println("Failed to create table: " + TABLE_NAME);
+            System.out.println("Failed to create table: " + p_name);
             e.printStackTrace();
         }
     }

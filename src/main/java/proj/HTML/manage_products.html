@@ -123,6 +123,7 @@
       if (!localStorage.getItem("token")) {
         window.location.href = "/";
       }
+      getCategories();
     };
     function createProduct() {
       var nameInput = document.getElementById("name").value;
@@ -152,9 +153,11 @@
           } else {
             showResponseMessage("Failed to create product", "responseMessage");
           }
+          getCategories();
         }
       };
       xhr.send(JSON.stringify(data));
+
     }
 
     function getProduct() {
@@ -172,9 +175,11 @@
           } else {
             showResponseMessage("Failed to get product details", "productDetails");
           }
+          getCategories();
         }
       };
       xhr.send();
+
     }
 
     function updateProduct() {
@@ -207,9 +212,11 @@
           } else {
             showResponseMessage("Failed to update product", "updateResponseMessage");
           }
+          getCategories();
         }
       };
       xhr.send(JSON.stringify(data));
+
     }
 
     function deleteProduct() {
@@ -225,9 +232,11 @@
           } else {
             showResponseMessage("Failed to delete product", "deleteResponseMessage");
           }
+          getCategories()
         }
       };
       xhr.send();
+
     }
 
     function takeItem() {
@@ -255,7 +264,39 @@
         xhr.send();
     }
 
+    function getCategories() {
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", "/api/category", true);
+      xhr.setRequestHeader("Authorization", "Bearer " + localStorage.getItem("token"));
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            var response = JSON.parse(xhr.responseText);
+            var categorySelect = document.getElementById("category");
+            var UPDcategorySelect=document.getElementById("updateCategory");
+            // Очистити попередні опції
+            categorySelect.innerHTML = "";
+            UPDcategorySelect.innerHTML="";
+            // Додати опції з назвами категорій
+            for (var i = 0; i < response.length; i++) {
+              var categoryOption = document.createElement("option");
+              categoryOption.value = response[i].name;
+              categoryOption.textContent = response[i].name;
+              categorySelect.appendChild(categoryOption);
 
+              var categoryOption2 = document.createElement("option");
+              categoryOption2.value = response[i].name;
+              categoryOption2.textContent = response[i].name;
+              categorySelect.appendChild(categoryOption2);
+              UPDcategorySelect.appendChild(categoryOption2);
+            }
+          } else {
+            showResponseMessage("Failed to get categories", "responseMessage");
+          }
+        }
+      };
+      xhr.send();
+    }
     function showResponseMessage(message, elementId) {
       var responseMessage = document.getElementById(elementId);
       responseMessage.innerHTML = message;
@@ -267,7 +308,9 @@
   <div class="sidebar">
     <ul>
       <li><a href="/">Home</a></li>
-      <li><a href="/categories">Manage Categories</a></li>
+      <li><a href="/manage_products">Manage Products</a></li>
+      <li><a href="/manage_categories">Manage Categories</a></li>
+      <li><a href="/tables">Static data</a></li>
     </ul>
   </div>
 </div>
@@ -287,7 +330,9 @@
   </div>
   <div class="form-group">
     <label for="category">Category:</label>
-    <input type="text" id="category" required>
+    <select id="category" required>
+      <!-- Опції будуть додані за допомогою JavaScript -->
+    </select>
   </div>
   <div class="form-group">
     <label for="characteristic">Characteristic:</label>
@@ -351,7 +396,9 @@
   </div>
   <div class="form-group">
     <label for="updateCategory">Category:</label>
-    <input type="text" id="updateCategory" required>
+    <select id="updateCategory" required>
+      <!-- Опції будуть додані за допомогою JavaScript -->
+    </select>
   </div>
   <div class="form-group">
     <label for="updateCharacteristic">Characteristic:</label>

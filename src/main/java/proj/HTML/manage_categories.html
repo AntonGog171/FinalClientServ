@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Category Management</title>
+  <style>
+    /* CSS styles for formatting */
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: bold;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="number"] {
+      width: 100%;
+      padding: 5px;
+    }
+
+    .form-group button {
+      padding: 5px 10px;
+      background-color: #333;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    .response-message {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #eee;
+      color: #333;
+    }
+
+    /* Styles for forms */
+    .form-container {
+      margin-bottom: 30px;
+    }
+
+    .form-container h1 {
+      margin-bottom: 20px;
+    }
+
+    .form-container .form-group {
+      display: flex;
+      align-items: center;
+    }
+
+    .form-container .form-group label {
+      flex-basis: 100px;
+      margin-right: 10px;
+    }
+
+    .form-container .form-group input[type="text"],
+    .form-container .form-group input[type="number"] {
+      flex-grow: 1;
+    }
+
+    .form-container .form-group button {
+      margin-left: auto;
+    }
+    /* ... Existing CSS styles ... */
+
+    .styled-button {
+      padding: 5px 10px;
+      background-color: #333;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    .styled-button:hover {
+      background-color: #555;
+    }
+
+    .styled-button:focus {
+      outline: none;
+      background-color: #555;
+    }
+
+    /* Styles for sidebar */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 200px;
+      height: 100%;
+      background-color: #333;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .sidebar ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    .sidebar ul li {
+      margin-bottom: 10px;
+    }
+
+    .sidebar ul li a {
+      text-decoration: none;
+      color: #fff;
+      display: block;
+      padding: 10px;
+      background-color: #444;
+      border-radius: 5px;
+    }
+
+    .sidebar ul li a:hover {
+      background-color: #555;
+    }
+
+    .sidebar ul li a:hover,
+    .sidebar ul li a:focus {
+      outline: none;
+      background-color: #555;
+    }
+  </style>
+</head>
+<body>
+<div class="sidebar">
+  <ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="/manage_products">Manage Products</a></li>
+    <li><a href="/manage_categories">Manage Categories</a></li>
+    <li><a href="/tables">Static data</a></li>
+  </ul>
+</div>
+
+<div class="container">
+  <div class="form-container">
+    <h1>Create Category</h1>
+    <form id="create-category-form">
+      <div class="form-group">
+        <label for="name">Category Name:</label>
+        <input type="text" id="name" name="name" required>
+      </div>
+      <div class="form-group">
+        <label for="description">Category Description:</label>
+        <textarea id="description" name="description" rows="4" cols="50" required></textarea>
+      </div>
+      <div class="form-group">
+        <input type="submit" value="Create" class="styled-button">
+      </div>
+
+    </form>
+    <div id="create-category-result" class="response-message"></div>
+  </div>
+
+  <div class="form-container">
+    <h1>Update Category</h1>
+    <form id="update-category-form">
+      <div class="form-group">
+        <label for="update-name">Category Name:</label>
+        <select id="update-name" required>
+          <!-- Options will be added using JavaScript -->
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="update-description">Category Description:</label>
+        <textarea id="update-description" name="update-description" rows="4" cols="50" required></textarea>
+      </div>
+      <div class="form-group">
+        <input type="submit" value="Update" class="styled-button">
+      </div>
+    </form>
+    <div id="update-category-result" class="response-message"></div>
+  </div>
+
+  <div class="form-container">
+    <h1>Delete Category</h1>
+    <form id="delete-category-form">
+      <div class="form-group">
+        <label for="delete-name">Category Name:</label>
+        <select id="delete-name" required>
+          <!-- Options will be added using JavaScript -->
+        </select>
+      </div>
+      <div class="form-group">
+        <input type="submit" value="Delete" class="styled-button">
+      </div>
+    </form>
+    <div id="delete-category-result" class="response-message"></div>
+  </div>
+
+  <div class="form-container">
+    <h1>Get Category Info</h1>
+    <form id="get-category-form">
+      <div class="form-group">
+        <label for="get-name">Category Name:</label>
+        <select id="get-name" required>
+          <!-- Options will be added using JavaScript -->
+        </select>
+      </div>
+      <div class="form-group">
+        <input type="submit" value="Get Info" class="styled-button">
+      </div>
+    </form>
+    <div id="get-category-result" class="response-message"></div>
+  </div>
+</div>
+<script>
+  window.onload = function() {
+    // Check authorization
+    if (!localStorage.getItem("token")) {
+      window.location.href = "/";
+    }
+    getCategories()
+  };
+
+  function getCategories() {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", "/api/category", true);
+    xhr.setRequestHeader("Authorization", "Bearer " + localStorage.getItem("token"));
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          var response = JSON.parse(xhr.responseText);
+          var upd_cat = document.getElementById("update-name");
+          var del_cat=document.getElementById("delete-name");
+          var get_cat=document.getElementById("get-name");
+          // Очистити попередні опції
+          upd_cat.innerHTML = "";
+          del_cat.innerHTML="";
+          get_cat.innerHTML="";
+          // Додати опції з назвами категорій
+          for (var i = 0; i < response.length; i++) {
+            var categoryOption = document.createElement("option");
+            categoryOption.value = response[i].name;
+            categoryOption.textContent = response[i].name;
+            upd_cat.appendChild(categoryOption);
+
+            var categoryOption2 = document.createElement("option");
+            categoryOption2.value = response[i].name;
+            categoryOption2.textContent = response[i].name;
+            del_cat.appendChild(categoryOption2);
+
+            var categoryOption3 = document.createElement("option");
+            categoryOption3.value = response[i].name;
+            categoryOption3.textContent = response[i].name;
+            get_cat.appendChild(categoryOption3);
+          }
+        } else {
+          showResponseMessage("Failed to get categories", "responseMessage");
+        }
+      }
+    };
+    xhr.send();
+  }
+
+  function createCategory() {
+    var name = document.getElementById("name").value;
+    var description = document.getElementById("description").value;
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/category", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.setRequestHeader("Authorization", "Bearer " + localStorage.getItem("token"));
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 201) {
+          document.getElementById("create-category-result").innerHTML = "Category created successfully!";
+        } else {
+          document.getElementById("create-category-result").innerHTML = "Error creating category: " + xhr.status + " " + xhr.responseText;
+        }
+        getCategories();
+      }
+    };
+    var data = JSON.stringify({ "name": name, "description": description });
+    xhr.send(data);
+
+  }
+
+  function updateCategory() {
+    var name = document.getElementById("update-name").value;
+    var description = document.getElementById("update-description").value;
+    var xhr = new XMLHttpRequest();
+    xhr.open("PUT", "/api/category/" + name, true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.setRequestHeader("Authorization", "Bearer " + localStorage.getItem("token"));
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          document.getElementById("update-category-result").innerHTML = "Category updated successfully!";
+        } else {
+          document.getElementById("update-category-result").innerHTML = "Error updating category: " + xhr.status + " " + xhr.responseText;
+        }
+        getCategories();
+      }
+
+    };
+    var data = JSON.stringify({ "name": name, "description": description });
+    xhr.send(data);
+
+  }
+
+  function deleteCategory() {
+    var name = document.getElementById("delete-name").value;
+    var xhr = new XMLHttpRequest();
+    xhr.open("DELETE", "/api/category/" + name, true);
+    xhr.setRequestHeader("Authorization", "Bearer " + localStorage.getItem("token"));
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          document.getElementById("delete-category-result").innerHTML = "Category deleted successfully!";
+        } else {
+          document.getElementById("delete-category-result").innerHTML = "Error deleting category: " + xhr.status + " " + xhr.responseText;
+        }
+        getCategories();
+      }
+
+    };
+    xhr.send();
+
+  }
+
+  function getCategoryInfo() {
+    var name = document.getElementById("get-name").value;
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", "/api/category/" + name, true);
+    xhr.setRequestHeader("Authorization", "Bearer " + localStorage.getItem("token"));
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          var category = JSON.parse(xhr.responseText);
+          var info = "Name: " + category.name + "<br> Description: " + category.description;
+          document.getElementById("get-category-result").innerHTML = info;
+        } else {
+          document.getElementById("get-category-result").innerHTML = "Error retrieving category info: " + xhr.status + " " + xhr.responseText;
+        }
+        getCategories();
+      }
+
+    };
+    xhr.send();
+
+  }
+
+  document.getElementById("create-category-form").addEventListener("submit", function(event) {
+    event.preventDefault();
+    createCategory();
+  });
+
+  document.getElementById("update-category-form").addEventListener("submit", function(event) {
+    event.preventDefault();
+    updateCategory();
+  });
+
+  document.getElementById("delete-category-form").addEventListener("submit", function(event) {
+    event.preventDefault();
+    deleteCategory();
+  });
+
+  document.getElementById("get-category-form").addEventListener("submit", function(event) {
+    event.preventDefault();
+    getCategoryInfo();
+  });
+</script>
+</body>
+</html>

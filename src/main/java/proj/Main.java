@@ -7,7 +7,7 @@ public class Main {
     private static final int NumberOfClients = 20;
     public static void main(String[] args) throws JsonProcessingException {
         String dbFileName = "product";
-        Connect conn = new Connect(dbFileName);
+        Connect conn = new Connect(dbFileName, Server.category_db);
         ProductService ps = new ProductService(conn.getCon(), dbFileName);
         //ps.drop();
         Product p= new Product(113,"bread", 2,3, "dough", "tasty", "poroh");

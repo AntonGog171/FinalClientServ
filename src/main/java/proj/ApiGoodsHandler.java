@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -24,7 +25,7 @@ public class ApiGoodsHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String dbFileName = Server.product_db;
-        Connect conn = new Connect(dbFileName);
+        Connect conn = new Connect(dbFileName, Server.category_db);
         ProductService ps = new ProductService(conn.getCon(), dbFileName);
         if(!auth(exchange)){return;}
 
@@ -78,6 +79,24 @@ public class ApiGoodsHandler implements HttpHandler {
                 }else{
                     sendErrorResponse(exchange, 409,"Conflict, could not insert data or data is wrong");
                 }
+            }
+        }else if(method.equals("GET") && DATA.equals("")){
+            List<Product> p = ps.getAllProducts();
+            if(p != null){
+                builder.append("[");
+                for (var x : p){
+                    builder.append(x.toString().substring(7)+", ");
+                }
+                builder.deleteCharAt(builder.length()-2);
+                builder.deleteCharAt(builder.length()-1);
+                builder.append("]");
+                byte[] bytes = builder.toString().getBytes();
+                exchange.sendResponseHeaders(200, bytes.length);
+                OutputStream os = exchange.getResponseBody();
+                os.write(bytes);
+                os.close();
+            }else {
+                sendErrorResponse(exchange, 404, "");
             }
         }
         else if(method.equals("GET") && Pattern.matches("/\\d+",DATA)){

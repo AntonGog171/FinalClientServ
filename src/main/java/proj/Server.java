@@ -17,14 +17,19 @@ public class Server {
     public static String adminPASSWORD="password";
     public static final String SECRET_KEY = "TESTKEYLONGENOUGHTESTKEYLONGENOUGH";
     public static final String product_db="product";
+    public static final String category_db="category";
     private static HttpServer server;
     public static void run() throws Exception {
         server = HttpServer.create();
         server.bind(new InetSocketAddress(1310), 0);
         HttpContext goodsapi = server.createContext(ApiGoodsHandler.PATH, new ApiGoodsHandler());
         HttpContext loginapi = server.createContext(ApiLoginHandler.PATH, new ApiLoginHandler());
+        HttpContext categoryapi = server.createContext(ApiCategoryService.PATH, new ApiCategoryService());
+
         HttpContext index = server.createContext("/", new IndexHandler());
         HttpContext goods=server.createContext("/manage_products", new GoodsHandler());
+        HttpContext categories = server.createContext("/manage_categories", new CategoryHandler());
+        HttpContext tables= server.createContext("/tables", new TablesHandler());
         server.setExecutor(java.util.concurrent.Executors.newFixedThreadPool(40));
         server.start();
     }
@@ -81,4 +86,54 @@ public class Server {
         }
     }
 
+    static class CategoryHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            String filePath = "D:\\clinet server\\ClientServerLab05\\Final_Project\\src\\main\\java\\proj\\HTML\\manage_categories.html";
+            File file = new File(filePath);
+            if (file.exists()) {
+                byte[] fileBytes = Files.readAllBytes(file.toPath());
+                exchange.sendResponseHeaders(200, fileBytes.length);
+                OutputStream os = exchange.getResponseBody();
+                os.write(fileBytes);
+                os.close();
+            } else {
+                sendErrorResponse(exchange, 404, "File Not Found");
+            }
+        }
+
+
+        private void sendErrorResponse(HttpExchange exchange, int statusCode, String message) throws IOException {
+            byte[] response = message.getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(statusCode, response.length);
+            OutputStream os = exchange.getResponseBody();
+            os.write(response);
+            os.close();
+        }
+    }
+    static class TablesHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            String filePath = "D:\\clinet server\\ClientServerLab05\\Final_Project\\src\\main\\java\\proj\\HTML\\tables.html";
+            File file = new File(filePath);
+            if (file.exists()) {
+                byte[] fileBytes = Files.readAllBytes(file.toPath());
+                exchange.sendResponseHeaders(200, fileBytes.length);
+                OutputStream os = exchange.getResponseBody();
+                os.write(fileBytes);
+                os.close();
+            } else {
+                sendErrorResponse(exchange, 404, "File Not Found");
+            }
+        }
+
+
+        private void sendErrorResponse(HttpExchange exchange, int statusCode, String message) throws IOException {
+            byte[] response = message.getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(statusCode, response.length);
+            OutputStream os = exchange.getResponseBody();
+            os.write(response);
+            os.close();
+        }
+    }
 }

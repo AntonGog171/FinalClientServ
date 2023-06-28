@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Product Database</title>
+  <style>
+    /* CSS styles for formatting */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .container {
+      display: flex;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 200px;
+      height: 100%;
+      background-color: #333;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .sidebar ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    .sidebar ul li {
+      margin-bottom: 10px;
+    }
+
+    .sidebar ul li a {
+      text-decoration: none;
+      color: #fff;
+      display: block;
+      padding: 10px;
+      background-color: #444;
+      border-radius: 5px;
+    }
+
+    .sidebar ul li a:hover {
+      background-color: #555;
+    }
+
+    .sidebar ul li a:hover,
+    .sidebar ul li a:focus {
+      outline: none;
+      background-color: #555;
+    }
+
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #333;
+      color: #fff;
+    }
+
+    #total-value {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    /* Add any additional styles as needed */
+    button {
+      padding: 5px 10px;
+      background-color: #444;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #555;
+    }
+  </style>
+
+
+
+</head>
+<body>
+<div class="container">
+  <div class="sidebar">
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/manage_products">Manage Products</a></li>
+      <li><a href="/manage_categories">Manage Categories</a></li>
+      <li><a href="/tables">Static data</a></li>
+    </ul>
+  </div>
+  <div class="content">
+    <h1>Product Database</h1>
+    <label for="tabel1_cat">Category:</label>
+    <select id="tabel1_cat" required>
+      <!-- Options will be added using JavaScript -->
+    </select>
+    <button onclick="filterProducts()">Filter</button>
+    <table>
+      <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Price</th>
+        <th>Quantity</th>
+        <th>Category</th>
+        <th>Characteristic</th>
+        <th>Manufacturer</th>
+      </tr>
+      </thead>
+      <tbody id="product-table-body">
+      <!-- Table rows will be added dynamically using JavaScript -->
+      </tbody>
+    </table>
+    <div id="total-value"></div>
+  </div>
+</div>
+
+<script>
+  window.onload = function() {
+    // Check authorization
+    if (!localStorage.getItem("token")) {
+      window.location.href = "/";
+    }
+    getCategories();
+    loadProducts("");
+  };
+
+  function loadProducts(category) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", "/api/good", true);
+    xhr.setRequestHeader("Authorization", "Bearer " + localStorage.getItem("token"));
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          var products = JSON.parse(xhr.responseText)
+          displayProducts(products, category);
+          calculateTotalValue(products,category);
+        } else {
+          console.log("Error loading products: " + xhr.status + " " + xhr.responseText);
+        }
+      }
+    };
+    xhr.send();
+  }
+
+  function displayProducts(products, category) {
+    var tableBody = document.getElementById("product-table-body");
+    tableBody.innerHTML = "";
+
+    for (var i = 0; i < products.length; i++) {
+      var product = products[i];
+      if(category=="" || product.category==category){
+        var row = document.createElement("tr");
+        row.innerHTML = "<td>" + product.id + "</td>" +
+                "<td>" + product.name + "</td>" +
+                "<td>" + product.price + "</td>" +
+                "<td>" + product.quantity + "</td>"+
+                "<td>" + product.category + "</td>"+
+                "<td>" + product.characteristic + "</td>"+
+                "<td>" + product.manufacturer + "</td>";
+
+        tableBody.appendChild(row);
+      }
+    }
+  }
+
+  function filterProducts() {
+    var categoryInput = document.getElementById("tabel1_cat");
+    var category = categoryInput.value.trim();
+    loadProducts(category);
+  }
+
+  function getCategories() {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", "/api/category", true);
+    xhr.setRequestHeader("Authorization", "Bearer " + localStorage.getItem("token"));
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          var response = JSON.parse(xhr.responseText);
+          var categorySelect = document.getElementById("tabel1_cat");
+          // Clear previous options
+          categorySelect.innerHTML = "";
+          // Add options with category names
+          var categoryOption0 = document.createElement("option");
+          categoryOption0.value="";
+          categoryOption0.textContent="None";
+          categorySelect.appendChild(categoryOption0);
+          for (var i = 0; i < response.length; i++) {
+            var categoryOption = document.createElement("option");
+            categoryOption.value = response[i].name;
+            categoryOption.textContent = response[i].name;
+            categorySelect.appendChild(categoryOption);
+          }
+        } else {
+          showResponseMessage("Failed to get categories", "responseMessage");
+        }
+      }
+    };
+    xhr.send();
+  }
+
+  function calculateTotalValue(products, category) {
+    var totalValue = 0;
+    for (var i = 0; i < products.length; i++) {
+      var product = products[i];
+      if(category=="" || product.category==category){
+        totalValue += product.quantity * product.price;
+      }
+    }
+    var totalValueElement = document.getElementById("total-value");
+    totalValueElement.textContent = "Total Value: $" + totalValue.toFixed(2);
+  }
+</script>
+</body>
+</html>
