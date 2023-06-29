@@ -27,6 +27,7 @@ public class ApiCategoryService implements HttpHandler {
     public static final String PATH = "/api/category";
     private CategoryService categoryService;
     private static Cipher ecipher;
+    private static Cipher dcipher;
     public static final byte[] KEY = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'};
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -40,6 +41,14 @@ public class ApiCategoryService implements HttpHandler {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        try {
+            dcipher = Cipher.getInstance("AES");
+            SecretKeySpec dSpec = new SecretKeySpec(KEY, "AES");
+            dcipher.init(Cipher.DECRYPT_MODE, dSpec);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
         String dbFileName = Server.product_db;
         Connect conn = new Connect(dbFileName, Server.category_db);
         categoryService = new CategoryService(conn.getCon(), dbFileName, Server.category_db);
@@ -64,14 +73,21 @@ public class ApiCategoryService implements HttpHandler {
             List<Category> categories = categoryService.getAllCategories();
             ObjectMapper objectMapper = new ObjectMapper();
             String json = objectMapper.writeValueAsString(categories);
-            //json= Base64.encodeBase64String(ecipher.doFinal(json.getBytes()));
+            System.out.println("Before encoding: "+json);
+            try {
+                json= Base64.encodeBase64String(ecipher.doFinal(json.getBytes()));
+            }catch (Exception exception){exception.printStackTrace();}
+            //System.out.println("After encoding: "+json);
             sendSuccessResponse(exchange, 200, json);
         } else {
             Category category = categoryService.getCategoryByName(data.substring(1));
             if (category != null) {
                 ObjectMapper objectMapper = new ObjectMapper();
                 String json = objectMapper.writeValueAsString(category);
-                //json= Base64.encodeBase64String(ecipher.doFinal(json.getBytes()));
+                //System.out.println(json);
+                try {
+                    json= Base64.encodeBase64String(ecipher.doFinal(json.getBytes()));
+                }catch (Exception exception){exception.printStackTrace();}
                 sendSuccessResponse(exchange, 200, json);
             } else {
                 sendErrorResponse(exchange, 404, "Category not found");
@@ -83,6 +99,10 @@ public class ApiCategoryService implements HttpHandler {
         if (data.equals("")) {
             InputStream in = exchange.getRequestBody();
             String json = new String(in.readAllBytes());
+            try {
+                json= new String(dcipher.doFinal(Base64.decodeBase64(json.getBytes())));
+            }catch (Exception exception){exception.printStackTrace();}
+
             ObjectMapper objectMapper = new ObjectMapper();
             Category category = objectMapper.readValue(json, Category.class);
             if (categoryService.getCategoryByName(category.getName()) != null) {
@@ -101,6 +121,11 @@ public class ApiCategoryService implements HttpHandler {
             String categoryName = data.substring(1);
             InputStream in = exchange.getRequestBody();
             String json = new String(in.readAllBytes());
+
+            try {
+                json= new String(dcipher.doFinal(Base64.decodeBase64(json.getBytes())));
+            }catch (Exception exception){exception.printStackTrace();}
+
             ObjectMapper objectMapper = new ObjectMapper();
             Category category = objectMapper.readValue(json, Category.class);
             if (categoryService.getCategoryByName(categoryName) != null) {

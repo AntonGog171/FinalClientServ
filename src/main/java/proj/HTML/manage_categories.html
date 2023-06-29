@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Category Management</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <style>
     /* CSS styles for formatting */
     body {
@@ -227,6 +229,39 @@
     getCategories()
   };
 
+  function decrypt(crypted){
+    var base64EncodedKeyFromJava = 'QUJDREVGR0hJSktMTU5PUA=='; /* copied from output of Java program  */
+    var keyForCryptoJS = CryptoJS.enc.Base64.parse(base64EncodedKeyFromJava);
+    var encryptString=crypted;
+    var decodeBase64 = CryptoJS.enc.Base64.parse(encryptString);
+    var decryptedData = CryptoJS.AES.decrypt(
+            {
+              ciphertext: decodeBase64
+            },
+            keyForCryptoJS,
+            {
+              mode: CryptoJS.mode.ECB,
+              padding: CryptoJS.pad.Pkcs7
+            }
+    );
+    var decryptedText = decryptedData.toString(CryptoJS.enc.Utf8);
+    return decryptedText
+  }
+  function encrypt(plainText) {
+    var base64EncodedKeyFromJava = 'QUJDREVGR0hJSktMTU5PUA=='; /* copied from output of Java program  */
+    var keyForCryptoJS = CryptoJS.enc.Base64.parse(base64EncodedKeyFromJava);
+    var encryptedData = CryptoJS.AES.encrypt(
+            plainText,
+            keyForCryptoJS,
+            {
+              mode: CryptoJS.mode.ECB,
+              padding: CryptoJS.pad.Pkcs7
+            }
+    );
+    var encryptedBase64String = encryptedData.toString();
+    return encryptedBase64String;
+  }
+
   function getCategories() {
     var xhr = new XMLHttpRequest();
     xhr.open("GET", "/api/category", true);
@@ -234,7 +269,8 @@
     xhr.onreadystatechange = function () {
       if (xhr.readyState === 4) {
         if (xhr.status === 200) {
-          var response = JSON.parse(xhr.responseText);
+          var decryptedText = decrypt(xhr.responseText);
+          var response = JSON.parse(decryptedText);
           var upd_cat = document.getElementById("update-name");
           var del_cat=document.getElementById("delete-name");
           var get_cat=document.getElementById("get-name");
@@ -285,8 +321,8 @@
       }
     };
     var data = JSON.stringify({ "name": name, "description": description });
-    xhr.send(data);
 
+    xhr.send(encrypt(data));
   }
 
   function updateCategory() {
@@ -308,7 +344,7 @@
 
     };
     var data = JSON.stringify({ "name": name, "description": description });
-    xhr.send(data);
+    xhr.send(encrypt(data));
 
   }
 

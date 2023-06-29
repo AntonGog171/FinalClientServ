@@ -6,7 +6,9 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.apache.commons.codec.binary.Base64;
 
+import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,13 +30,36 @@ public class ApiLoginHandler implements HttpHandler {
     private static final long EXPIRATION_TIME_MS = 24 * 60 * 60 * 1000; // 24 hours
     //private static final long EXPIRATION_TIME_MS = 15000;
     public static String PATH="/login";
+    private static Cipher ecipher;
+    private static Cipher dcipher;
+    public static final byte[] KEY = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'};
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        try {
+            ecipher = Cipher.getInstance("AES");
+            SecretKeySpec eSpec = new SecretKeySpec(KEY, "AES");
+            ecipher.init(Cipher.ENCRYPT_MODE, eSpec);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            dcipher = Cipher.getInstance("AES");
+            SecretKeySpec dSpec = new SecretKeySpec(KEY, "AES");
+            dcipher.init(Cipher.DECRYPT_MODE, dSpec);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
         if ("POST".equals(exchange.getRequestMethod())) {
             // Read the login and password from the request body
             InputStream in = exchange.getRequestBody();
             String json = new String(in.readAllBytes());
+
+            try {
+                json= Base64.encodeBase64String(dcipher.doFinal(json.getBytes()));
+            }catch (Exception exception){exception.printStackTrace();}
+
             ObjectMapper objectMapper = new ObjectMapper();
             Map<String, String> requestData = objectMapper.readValue(json, new TypeReference<>() {});
 

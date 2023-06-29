@@ -5,7 +5,10 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import org.apache.commons.codec.binary.Base64;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,6 +24,9 @@ import static proj.Server.adminLOGIN;
 
 public class ApiGoodsHandler implements HttpHandler {
     public static String PATH="/api/good";
+    private static Cipher ecipher;
+    private static Cipher dcipher;
+    public static final byte[] KEY = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'};
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -29,16 +35,36 @@ public class ApiGoodsHandler implements HttpHandler {
         ProductService ps = new ProductService(conn.getCon(), dbFileName);
         if(!auth(exchange)){return;}
 
+        try {
+            ecipher = Cipher.getInstance("AES");
+            SecretKeySpec eSpec = new SecretKeySpec(KEY, "AES");
+            ecipher.init(Cipher.ENCRYPT_MODE, eSpec);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            dcipher = Cipher.getInstance("AES");
+            SecretKeySpec dSpec = new SecretKeySpec(KEY, "AES");
+            dcipher.init(Cipher.DECRYPT_MODE, dSpec);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
         StringBuilder builder = new StringBuilder();
         String method= exchange.getRequestMethod();
         String DATA=exchange.getRequestURI().toString().substring(PATH.length());
         //System.out.println("uri after good: "+DATA);
+
 
         if(method.equals("PUT") && DATA.equals("")){
             InputStream in =exchange.getRequestBody();
             String json=new String(in.readAllBytes());
             //System.out.println(json);
             //System.out.println("-------");
+            try {
+                json= new String(dcipher.doFinal(Base64.decodeBase64(json.getBytes())));
+            }catch (Exception exception){exception.printStackTrace();}
+
             ObjectMapper objectMapper = new ObjectMapper();
             Product p = null;
             try {
@@ -90,11 +116,21 @@ public class ApiGoodsHandler implements HttpHandler {
                 builder.deleteCharAt(builder.length()-2);
                 builder.deleteCharAt(builder.length()-1);
                 builder.append("]");
-                byte[] bytes = builder.toString().getBytes();
-                exchange.sendResponseHeaders(200, bytes.length);
-                OutputStream os = exchange.getResponseBody();
-                os.write(bytes);
-                os.close();
+                try {
+                    byte[] bytes = ecipher.doFinal(builder.toString().getBytes());
+                    //String  kek = new String(dcipher.doFinal(bytes));
+                    //System.out.println(kek);
+                    OutputStream os = exchange.getResponseBody();
+
+                    try{
+                        byte[] enc = Base64.encodeBase64String(bytes).getBytes();
+                        exchange.sendResponseHeaders(200, enc.length);
+                        for( var b: enc){
+                            os.write(b);
+                        }
+                    }catch (Exception ex){ex.printStackTrace();}
+                    os.close();
+                }catch (Exception exception){exception.printStackTrace();}
             }else {
                 sendErrorResponse(exchange, 404, "");
             }
@@ -105,11 +141,21 @@ public class ApiGoodsHandler implements HttpHandler {
             System.out.println(p);
             if(p != null){
                 builder.append(p.toString().substring(7));
-                byte[] bytes = builder.toString().getBytes();
-                exchange.sendResponseHeaders(200, bytes.length);
-                OutputStream os = exchange.getResponseBody();
-                os.write(bytes);
-                os.close();
+                try {
+                    byte[] bytes = ecipher.doFinal(builder.toString().getBytes());
+                    //String  kek = new String(dcipher.doFinal(bytes));
+                    //System.out.println(kek);
+                    OutputStream os = exchange.getResponseBody();
+
+                    try{
+                        byte[] enc = Base64.encodeBase64String(bytes).getBytes();
+                        exchange.sendResponseHeaders(200, enc.length);
+                        for( var b: enc){
+                            os.write(b);
+                        }
+                    }catch (Exception ex){ex.printStackTrace();}
+                    os.close();
+                }catch (Exception exception){exception.printStackTrace();}
             }else {
                 sendErrorResponse(exchange, 404, "");
             }
@@ -118,6 +164,9 @@ public class ApiGoodsHandler implements HttpHandler {
             int id=Integer.parseInt(DATA.substring(1));
             InputStream in =exchange.getRequestBody();
             String json=new String(in.readAllBytes());
+            try {
+                json= new String(dcipher.doFinal(Base64.decodeBase64(json.getBytes())));
+            }catch (Exception exception){exception.printStackTrace();}
             ObjectMapper objectMapper = new ObjectMapper();
             Product p = objectMapper.readValue(json, Product.class);
             if(ps.read(id)!=null){
