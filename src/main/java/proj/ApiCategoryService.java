@@ -5,7 +5,13 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import org.apache.commons.codec.binary.Base64;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -20,12 +26,19 @@ import static proj.Server.adminLOGIN;
 public class ApiCategoryService implements HttpHandler {
     public static final String PATH = "/api/category";
     private CategoryService categoryService;
-
-
+    private static Cipher ecipher;
+    public static final byte[] KEY = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'};
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         if (!auth(exchange)) {
             return;
+        }
+        try {
+            ecipher = Cipher.getInstance("AES");
+            SecretKeySpec eSpec = new SecretKeySpec(KEY, "AES");
+            ecipher.init(Cipher.ENCRYPT_MODE, eSpec);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
         String dbFileName = Server.product_db;
         Connect conn = new Connect(dbFileName, Server.category_db);
@@ -46,17 +59,19 @@ public class ApiCategoryService implements HttpHandler {
         }
     }
 
-    private void handleGetRequest(HttpExchange exchange, String data) throws IOException {
+    private void handleGetRequest(HttpExchange exchange, String data) throws IOException{
         if (data.equals("")) {
             List<Category> categories = categoryService.getAllCategories();
             ObjectMapper objectMapper = new ObjectMapper();
             String json = objectMapper.writeValueAsString(categories);
+            //json= Base64.encodeBase64String(ecipher.doFinal(json.getBytes()));
             sendSuccessResponse(exchange, 200, json);
         } else {
             Category category = categoryService.getCategoryByName(data.substring(1));
             if (category != null) {
                 ObjectMapper objectMapper = new ObjectMapper();
                 String json = objectMapper.writeValueAsString(category);
+                //json= Base64.encodeBase64String(ecipher.doFinal(json.getBytes()));
                 sendSuccessResponse(exchange, 200, json);
             } else {
                 sendErrorResponse(exchange, 404, "Category not found");
@@ -66,13 +81,10 @@ public class ApiCategoryService implements HttpHandler {
 
     private void handlePostRequest(HttpExchange exchange, String data) throws IOException {
         if (data.equals("")) {
-            System.out.println("POST1");
             InputStream in = exchange.getRequestBody();
             String json = new String(in.readAllBytes());
             ObjectMapper objectMapper = new ObjectMapper();
-            System.out.println(json);
             Category category = objectMapper.readValue(json, Category.class);
-            System.out.println("POST2");
             if (categoryService.getCategoryByName(category.getName()) != null) {
                 sendErrorResponse(exchange, 409, "Category already exists");
             } else {
